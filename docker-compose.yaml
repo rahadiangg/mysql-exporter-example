@@ -1,0 +1,92 @@
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    restart: on-failure
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=mantapdjiwa
+  
+  mysql_exporter:
+    container_name: mysql-exporter
+    image: prom/mysqld-exporter:v0.15.1
+    restart: on-failure
+    volumes:
+      - ./config/mysql-exporter/conf.ini:/var/mysql-exporter/conf.ini
+    command: ["--config.my-cnf=/var/mysql-exporter/conf.ini",
+        "--collect.auto_increment.columns",
+        "--collect.binlog_size",
+        "--collect.engine_innodb_status",
+        "--collect.engine_tokudb_status",
+        "--collect.global_status",
+        "--collect.global_variables",
+        "--collect.heartbeat",
+        "--collect.heartbeat.database",
+        "--collect.heartbeat.table",
+        "--collect.heartbeat.utc",
+        "--collect.info_schema.clientstats",
+        "--collect.info_schema.innodb_metrics",
+        "--collect.info_schema.innodb_tablespaces",
+        "--collect.info_schema.innodb_cmp",
+        "--collect.info_schema.innodb_cmpmem",
+        "--collect.info_schema.processlist",
+        "--collect.info_schema.processlist.min_time",
+        "--collect.info_schema.query_response_time",
+        "--collect.info_schema.replica_host",
+        "--collect.info_schema.tables",
+        "--collect.info_schema.tables.databases",
+        "--collect.info_schema.tablestats",
+        "--collect.info_schema.schemastats",
+        "--collect.info_schema.userstats",
+        "--collect.mysql.user",
+        "--collect.perf_schema.eventsstatements",
+        "--collect.perf_schema.eventsstatements.digest_text_limit",
+        "--collect.perf_schema.eventsstatements.limit",
+        "--collect.perf_schema.eventsstatements.timelimit",
+        "--collect.perf_schema.eventsstatementssum",
+        "--collect.perf_schema.eventswaits",
+        "--collect.perf_schema.file_events",
+        "--collect.perf_schema.file_instances",
+        "--collect.perf_schema.file_instances.remove_prefix",
+        "--collect.perf_schema.indexiowaits",
+        "--collect.perf_schema.memory_events",
+        "--collect.perf_schema.memory_events.remove_prefix",
+        "--collect.perf_schema.tableiowaits",
+        "--collect.perf_schema.tablelocks",
+        "--collect.perf_schema.replication_group_members",
+        "--collect.perf_schema.replication_group_member_stats",
+        "--collect.perf_schema.replication_applier_status_by_worker",
+        "--collect.slave_status",
+        "--collect.slave_hosts",
+        "--collect.sys.user_summary",
+        "--web.listen-address=0.0.0.0:8080"]
+    # command: --web.listen-address=0.0.0.0:8080
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v2.44.0
+    ports:
+      - 9999:9090
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
+    restart: on-failure
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana-oss:9.5.2
+    ports:
+      - 3333:3000
+    depends_on:
+      - prometheus
+    volumes:
+      # - ./config/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./config/grafana/prometheus-datasource.yaml:/etc/grafana/provisioning/datasources/prometheus.yaml
+      # - ./config/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json
+      # - ./config/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+    restart: on-failure
+
+volumes:
+  mysql:
